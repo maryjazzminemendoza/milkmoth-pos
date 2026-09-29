@@ -246,15 +246,76 @@ function Products() {
         throw new Error(error.message)
       }
 
-      setProducts((currentProducts) =>
-        currentProducts.map((product) =>
-          product.id === data.id
-            ? data
-            : product
+      try {
+        const response = await fetch(
+          '/api/send-shipping-email',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              customerEmail: data.customer_email,
+              customerName: data.customer_name,
+              productName: data.name,
+              sku: data.sku,
+              receiptNumber: data.receipt_number,
+              courier: data.courier,
+              trackingNumber: data.tracking_number,
+            }),
+          }
         )
-      )
 
-      setSelectedProduct(null)
+        const emailResult = await response.json()
+
+        if (!response.ok) {
+          throw new Error(
+            emailResult.error ||
+              'Failed to send shipping email.'
+          )
+        }
+
+        const { data: updatedProduct, error: emailUpdateError } =
+          await supabase
+            .from('products')
+            .update({
+              shipping_email_sent_at:
+                new Date().toISOString(),
+            })
+            .eq('id', data.id)
+            .select()
+            .single()
+
+        if (emailUpdateError) {
+          throw new Error(emailUpdateError.message)
+        }
+
+        setProducts((currentProducts) =>
+          currentProducts.map((product) =>
+            product.id === updatedProduct.id
+              ? updatedProduct
+              : product
+          )
+        )
+
+        setSelectedProduct(null)
+      } catch (emailError) {
+        console.error('Shipping email failed:', emailError)
+
+        setProducts((currentProducts) =>
+          currentProducts.map((product) =>
+            product.id === data.id
+              ? data
+              : product
+          )
+        )
+
+        setSelectedProduct(null)
+
+        window.alert(
+          'The order was marked as shipped, but the shipping email could not be sent. We can add a resend option next.'
+        )
+      }
     } finally {
       setSaving(false)
     }

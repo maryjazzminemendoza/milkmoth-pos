@@ -201,7 +201,8 @@ function ProductActionsModal({
               </button>
             )}
 
-            {product.status === 'sold' && (
+            {product.status === 'sold' &&
+                product.shipping_status !== 'shipped' && (
               <>
                 <button
                   className="action-menu-item"
