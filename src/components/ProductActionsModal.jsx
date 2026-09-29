@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Trash2 } from 'lucide-react'
+import { X, Trash2, Printer } from 'lucide-react'
 
 function ProductActionsModal({
   product,
@@ -7,6 +7,7 @@ function ProductActionsModal({
   onEdit,
   onSell,
   onDelete,
+  onPrintReceipt,
   loading,
 }) {
   const [mode, setMode] = useState('menu')
@@ -14,10 +15,27 @@ function ProductActionsModal({
   const [name, setName] = useState(product.name)
   const [price, setPrice] = useState(product.price)
 
-  const [salePrice, setSalePrice] = useState(product.sale_price ?? product.price)
+  const [salePrice, setSalePrice] = useState(
+    product.sale_price ?? product.price
+  )
+
   const [saleChannel, setSaleChannel] = useState(
     product.sale_channel ?? 'instagram'
   )
+
+  const [customerName, setCustomerName] = useState(
+    product.customer_name ?? ''
+  )
+
+  const [customerContact, setCustomerContact] = useState(
+    product.customer_contact ?? ''
+  )
+
+  const [customerAddress, setCustomerAddress] = useState(
+    product.customer_address ?? ''
+  )
+
+  const [formError, setFormError] = useState('')
 
   function handleEditSubmit(event) {
     event.preventDefault()
@@ -25,7 +43,11 @@ function ProductActionsModal({
     const trimmedName = name.trim()
     const numericPrice = Number(price)
 
-    if (!trimmedName || Number.isNaN(numericPrice) || numericPrice < 0) {
+    if (
+      !trimmedName ||
+      Number.isNaN(numericPrice) ||
+      numericPrice < 0
+    ) {
       return
     }
 
@@ -38,18 +60,43 @@ function ProductActionsModal({
   function handleSellSubmit(event) {
     event.preventDefault()
 
+    setFormError('')
+
     const numericSalePrice = Number(salePrice)
+    const trimmedCustomerName = customerName.trim()
+    const trimmedCustomerContact = customerContact.trim()
+    const trimmedCustomerAddress = customerAddress.trim()
 
     if (
+      salePrice === '' ||
       Number.isNaN(numericSalePrice) ||
       numericSalePrice < 0
     ) {
+      setFormError('Please enter a valid sale amount.')
+      return
+    }
+
+    if (!trimmedCustomerName) {
+      setFormError('Please enter the customer name.')
+      return
+    }
+
+    if (!trimmedCustomerContact) {
+      setFormError('Please enter the customer contact number.')
+      return
+    }
+
+    if (!trimmedCustomerAddress) {
+      setFormError('Please enter the customer address.')
       return
     }
 
     onSell({
       sale_price: numericSalePrice,
       sale_channel: saleChannel,
+      customer_name: trimmedCustomerName,
+      customer_contact: trimmedCustomerContact,
+      customer_address: trimmedCustomerAddress,
     })
   }
 
@@ -57,7 +104,10 @@ function ProductActionsModal({
     <div
       className="modal-overlay"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !loading) {
+        if (
+          event.target === event.currentTarget &&
+          !loading
+        ) {
           onClose()
         }
       }}
@@ -87,7 +137,9 @@ function ProductActionsModal({
             >
               <div>
                 <strong>Edit product</strong>
-                <span>Change the item name or price.</span>
+                <span>
+                  Change the item name or selling price.
+                </span>
               </div>
             </button>
 
@@ -98,7 +150,25 @@ function ProductActionsModal({
               >
                 <div>
                   <strong>Mark as sold</strong>
-                  <span>Record the sale price and selling channel.</span>
+                  <span>
+                    Record the sale and customer details.
+                  </span>
+                </div>
+              </button>
+            )}
+
+            {product.status === 'sold' && (
+              <button
+                className="action-menu-item"
+                onClick={() => onPrintReceipt(product)}
+              >
+                <Printer size={18} />
+
+                <div>
+                  <strong>Print receipt</strong>
+                  <span>
+                    Print this customer's receipt.
+                  </span>
                 </div>
               </button>
             )}
@@ -111,28 +181,40 @@ function ProductActionsModal({
 
               <div>
                 <strong>Delete product</strong>
-                <span>Remove this item from your inventory.</span>
+                <span>
+                  Remove this item from your inventory.
+                </span>
               </div>
             </button>
           </div>
         )}
 
         {mode === 'edit' && (
-          <form className="product-form" onSubmit={handleEditSubmit}>
+          <form
+            className="product-form"
+            onSubmit={handleEditSubmit}
+          >
             <div className="form-group">
-              <label htmlFor="edit-product-name">Item name</label>
+              <label htmlFor="edit-product-name">
+                Item name
+              </label>
+
               <input
                 id="edit-product-name"
                 type="text"
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) =>
+                  setName(event.target.value)
+                }
                 disabled={loading}
                 autoFocus
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="edit-product-price">Price</label>
+              <label htmlFor="edit-product-price">
+                Selling price
+              </label>
 
               <div className="price-input">
                 <span>₱</span>
@@ -143,7 +225,9 @@ function ProductActionsModal({
                   min="0"
                   step="0.01"
                   value={price}
-                  onChange={(event) => setPrice(event.target.value)}
+                  onChange={(event) =>
+                    setPrice(event.target.value)
+                  }
                   disabled={loading}
                 />
               </div>
@@ -171,9 +255,14 @@ function ProductActionsModal({
         )}
 
         {mode === 'sell' && (
-          <form className="product-form" onSubmit={handleSellSubmit}>
+          <form
+            className="product-form"
+            onSubmit={handleSellSubmit}
+          >
             <div className="form-group">
-              <label htmlFor="sale-price">Sale price</label>
+              <label htmlFor="sale-price">
+                Amount
+              </label>
 
               <div className="price-input">
                 <span>₱</span>
@@ -184,7 +273,9 @@ function ProductActionsModal({
                   min="0"
                   step="0.01"
                   value={salePrice}
-                  onChange={(event) => setSalePrice(event.target.value)}
+                  onChange={(event) =>
+                    setSalePrice(event.target.value)
+                  }
                   disabled={loading}
                   autoFocus
                 />
@@ -192,12 +283,16 @@ function ProductActionsModal({
             </div>
 
             <div className="form-group">
-              <label htmlFor="sale-channel">Sold through</label>
+              <label htmlFor="sale-channel">
+                Sold through
+              </label>
 
               <select
                 id="sale-channel"
                 value={saleChannel}
-                onChange={(event) => setSaleChannel(event.target.value)}
+                onChange={(event) =>
+                  setSaleChannel(event.target.value)
+                }
                 disabled={loading}
               >
                 <option value="instagram">Instagram</option>
@@ -205,6 +300,61 @@ function ProductActionsModal({
                 <option value="other">Other</option>
               </select>
             </div>
+
+            <div className="form-group">
+              <label htmlFor="customer-name">
+                Customer name
+              </label>
+
+              <input
+                id="customer-name"
+                type="text"
+                value={customerName}
+                onChange={(event) =>
+                  setCustomerName(event.target.value)
+                }
+                placeholder="Jane Doe"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="customer-contact">
+                Contact #
+              </label>
+
+              <input
+                id="customer-contact"
+                type="tel"
+                value={customerContact}
+                onChange={(event) =>
+                  setCustomerContact(event.target.value)
+                }
+                placeholder="09XX XXX XXXX"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="customer-address">
+                Address
+              </label>
+
+              <textarea
+                id="customer-address"
+                value={customerAddress}
+                onChange={(event) =>
+                  setCustomerAddress(event.target.value)
+                }
+                placeholder="Customer's delivery address"
+                rows="3"
+                disabled={loading}
+              />
+            </div>
+
+            {formError && (
+              <p className="form-error">{formError}</p>
+            )}
 
             <div className="form-actions">
               <button
@@ -236,8 +386,8 @@ function ProductActionsModal({
             <h4>Delete this product?</h4>
 
             <p>
-              This will permanently remove <strong>{product.name}</strong>{' '}
-              from your inventory.
+              This will permanently remove{' '}
+              <strong>{product.name}</strong> from your inventory.
             </p>
 
             <div className="form-actions">
