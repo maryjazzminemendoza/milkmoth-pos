@@ -27,6 +27,10 @@ function ProductActionsModal({
     product.customer_name ?? ''
   )
 
+  const [customerEmail, setCustomerEmail] = useState(
+    product.customer_email ?? ''
+  )
+
   const [customerContact, setCustomerContact] = useState(
     product.customer_contact ?? ''
   )
@@ -64,6 +68,7 @@ function ProductActionsModal({
 
     const numericSalePrice = Number(salePrice)
     const trimmedCustomerName = customerName.trim()
+    const trimmedCustomerEmail = customerEmail.trim()
     const trimmedCustomerContact = customerContact.trim()
     const trimmedCustomerAddress = customerAddress.trim()
 
@@ -81,6 +86,11 @@ function ProductActionsModal({
       return
     }
 
+    if (!trimmedCustomerEmail) {
+      setFormError('Please enter the customer email.')
+      return
+    }
+
     if (!trimmedCustomerContact) {
       setFormError('Please enter the customer contact number.')
       return
@@ -95,6 +105,7 @@ function ProductActionsModal({
       sale_price: numericSalePrice,
       sale_channel: saleChannel,
       customer_name: trimmedCustomerName,
+      customer_email: trimmedCustomerEmail,
       customer_contact: trimmedCustomerContact,
       customer_address: trimmedCustomerAddress,
     })
@@ -314,6 +325,23 @@ function ProductActionsModal({
                   setCustomerName(event.target.value)
                 }
                 placeholder="Jane Doe"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="customer-email">
+                Customer email
+              </label>
+
+              <input
+                id="customer-email"
+                type="email"
+                value={customerEmail}
+                onChange={(event) =>
+                  setCustomerEmail(event.target.value)
+                }
+                placeholder="jane@example.com"
                 disabled={loading}
               />
             </div>

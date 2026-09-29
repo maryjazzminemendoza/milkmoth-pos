@@ -198,10 +198,9 @@ function Products() {
           sale_channel: sale.sale_channel,
           receipt_number: receiptNumber,
           customer_name: sale.customer_name,
-          customer_contact:
-            sale.customer_contact,
-          customer_address:
-            sale.customer_address,
+          customer_email: sale.customer_email,
+          customer_contact: sale.customer_contact,
+          customer_address: sale.customer_address,
         })
         .eq('id', selectedProduct.id)
         .select()
