@@ -16,6 +16,7 @@ export default async function handler(req, res) {
       receiptNumber,
       courier,
       trackingNumber,
+      trackingUrl,
     } = req.body
 
     if (
@@ -24,11 +25,28 @@ export default async function handler(req, res) {
       !productName ||
       !sku ||
       !receiptNumber ||
-      !courier ||
-      !trackingNumber
+      !courier
     ) {
       return res.status(400).json({
         error: 'Missing required shipping information.',
+      })
+    }
+
+    if (
+      courier === 'J&T Express' &&
+      !trackingNumber
+    ) {
+      return res.status(400).json({
+        error: 'Missing J&T tracking number.',
+      })
+    }
+
+    if (
+      courier === 'Lalamove' &&
+      !trackingUrl
+    ) {
+      return res.status(400).json({
+        error: 'Missing Lalamove tracking link.',
       })
     }
 
@@ -41,6 +59,32 @@ export default async function handler(req, res) {
         pass: process.env.SMTP_PASS,
       },
     })
+
+    const shippingValue =
+      courier === 'Lalamove'
+        ? `<a
+            href="${trackingUrl}"
+            target="_blank"
+            style="
+              color: #3d342e;
+              text-decoration: underline;
+              font-weight: 600;
+            "
+          >
+            Track shipment →
+          </a>`
+        : trackingNumber
+
+    const shippingLabel =
+      courier === 'Lalamove'
+        ? 'Tracking link'
+        : 'Tracking number'
+
+    const textTracking =
+      courier === 'Lalamove'
+        ? `Track your delivery:
+${trackingUrl}`
+        : `Tracking number: ${trackingNumber}`
 
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
@@ -57,9 +101,7 @@ ${productName}
 SKU: ${sku}
 
 Courier: ${courier}
-Tracking number: ${trackingNumber}
-
-Your parcel has been handed over to the courier. You can use the tracking number above to follow its journey.
+${textTracking}
 
 Thank you for giving this little relic a new home.
 
@@ -71,7 +113,10 @@ soft relics for daydreamers`,
         <html>
           <head>
             <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0"
+            />
             <title>Your Milkmoth order is on its way</title>
           </head>
 
@@ -92,7 +137,10 @@ soft relics for daydreamers`,
               style="background-color: #f3eee8;"
             >
               <tr>
-                <td align="center" style="padding: 40px 16px;">
+                <td
+                  align="center"
+                  style="padding: 40px 16px;"
+                >
                   <table
                     width="100%"
                     cellpadding="0"
@@ -194,7 +242,7 @@ soft relics for daydreamers`,
                       </td>
                     </tr>
 
-                    <!-- Order reference -->
+                    <!-- Order -->
                     <tr>
                       <td style="padding: 18px 40px 10px;">
                         <table
@@ -273,7 +321,7 @@ soft relics for daydreamers`,
                       </td>
                     </tr>
 
-                    <!-- Shipping details -->
+                    <!-- Shipping -->
                     <tr>
                       <td style="padding: 0 40px 34px;">
                         <div
@@ -338,7 +386,7 @@ soft relics for daydreamers`,
                                   color: #75675d;
                                 "
                               >
-                                Tracking number
+                                ${shippingLabel}
                               </td>
 
                               <td
@@ -353,7 +401,7 @@ soft relics for daydreamers`,
                                   word-break: break-all;
                                 "
                               >
-                                ${trackingNumber}
+                                ${shippingValue}
                               </td>
                             </tr>
                           </table>
@@ -375,9 +423,11 @@ soft relics for daydreamers`,
                             color: #75675d;
                           "
                         >
-                          You can use your tracking number
-                          above to follow your parcel's journey
-                          with the courier.
+                          ${
+                            courier === 'Lalamove'
+                              ? 'Tap the tracking link above to follow your delivery.'
+                              : 'You can use your tracking number above to follow your parcel with J&T Express.'
+                          }
                         </p>
                       </td>
                     </tr>
@@ -420,7 +470,6 @@ soft relics for daydreamers`,
 
                   </table>
 
-                  <!-- Footer -->
                   <div
                     style="
                       max-width: 560px;

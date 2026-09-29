@@ -236,6 +236,7 @@ function Products() {
           shipping_status: 'shipped',
           courier: shipping.courier,
           tracking_number: shipping.tracking_number,
+          tracking_url: shipping.tracking_url,
           shipped_at: new Date().toISOString(),
         })
         .eq('id', selectedProduct.id)
@@ -262,6 +263,7 @@ function Products() {
               receiptNumber: data.receipt_number,
               courier: data.courier,
               trackingNumber: data.tracking_number,
+              trackingUrl: data.tracking_url,
             }),
           }
         )
@@ -275,16 +277,18 @@ function Products() {
           )
         }
 
-        const { data: updatedProduct, error: emailUpdateError } =
-          await supabase
-            .from('products')
-            .update({
-              shipping_email_sent_at:
-                new Date().toISOString(),
-            })
-            .eq('id', data.id)
-            .select()
-            .single()
+        const {
+          data: updatedProduct,
+          error: emailUpdateError,
+        } = await supabase
+          .from('products')
+          .update({
+            shipping_email_sent_at:
+              new Date().toISOString(),
+          })
+          .eq('id', data.id)
+          .select()
+          .single()
 
         if (emailUpdateError) {
           throw new Error(emailUpdateError.message)
@@ -300,7 +304,10 @@ function Products() {
 
         setSelectedProduct(null)
       } catch (emailError) {
-        console.error('Shipping email failed:', emailError)
+        console.error(
+          'Shipping email failed:',
+          emailError
+        )
 
         setProducts((currentProducts) =>
           currentProducts.map((product) =>
