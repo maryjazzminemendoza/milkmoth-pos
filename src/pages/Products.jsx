@@ -224,6 +224,42 @@ function Products() {
     }
   }
 
+  async function handleShipProduct(shipping) {
+    if (!selectedProduct) return
+
+    setSaving(true)
+
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .update({
+          shipping_status: 'shipped',
+          courier: shipping.courier,
+          tracking_number: shipping.tracking_number,
+          shipped_at: new Date().toISOString(),
+        })
+        .eq('id', selectedProduct.id)
+        .select()
+        .single()
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      setProducts((currentProducts) =>
+        currentProducts.map((product) =>
+          product.id === data.id
+            ? data
+            : product
+        )
+      )
+
+      setSelectedProduct(null)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleDeleteProduct() {
     if (!selectedProduct) return
 
@@ -414,6 +450,7 @@ function Products() {
           }}
           onEdit={handleEditProduct}
           onSell={handleSellProduct}
+          onShip={handleShipProduct}
           onDelete={handleDeleteProduct}
           onPrintReceipt={printReceipt}
           loading={saving}

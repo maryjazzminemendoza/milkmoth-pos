@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { X, Trash2, Printer } from 'lucide-react'
+import { X, Trash2, Printer, Truck } from 'lucide-react'
 
 function ProductActionsModal({
   product,
   onClose,
   onEdit,
   onSell,
+  onShip,
   onDelete,
   onPrintReceipt,
   loading,
@@ -37,6 +38,14 @@ function ProductActionsModal({
 
   const [customerAddress, setCustomerAddress] = useState(
     product.customer_address ?? ''
+  )
+
+  const [courier, setCourier] = useState(
+    product.courier ?? ''
+  )
+
+  const [trackingNumber, setTrackingNumber] = useState(
+    product.tracking_number ?? ''
   )
 
   const [formError, setFormError] = useState('')
@@ -111,6 +120,30 @@ function ProductActionsModal({
     })
   }
 
+  function handleShipSubmit(event) {
+    event.preventDefault()
+
+    setFormError('')
+
+    const trimmedCourier = courier.trim()
+    const trimmedTrackingNumber = trackingNumber.trim()
+
+    if (!trimmedCourier) {
+      setFormError('Please enter the courier.')
+      return
+    }
+
+    if (!trimmedTrackingNumber) {
+      setFormError('Please enter the tracking number.')
+      return
+    }
+
+    onShip({
+      courier: trimmedCourier,
+      tracking_number: trimmedTrackingNumber,
+    })
+  }
+
   return (
     <div
       className="modal-overlay"
@@ -169,19 +202,35 @@ function ProductActionsModal({
             )}
 
             {product.status === 'sold' && (
-              <button
-                className="action-menu-item"
-                onClick={() => onPrintReceipt(product)}
-              >
-                <Printer size={18} />
+              <>
+                <button
+                  className="action-menu-item"
+                  onClick={() => setMode('ship')}
+                >
+                  <Truck size={18} />
 
-                <div>
-                  <strong>Print receipt</strong>
-                  <span>
-                    Print this customer's receipt.
-                  </span>
-                </div>
-              </button>
+                  <div>
+                    <strong>Mark as shipped</strong>
+                    <span>
+                      Add the courier and tracking number.
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  className="action-menu-item"
+                  onClick={() => onPrintReceipt(product)}
+                >
+                  <Printer size={18} />
+
+                  <div>
+                    <strong>Print receipt</strong>
+                    <span>
+                      Print this customer's receipt.
+                    </span>
+                  </div>
+                </button>
+              </>
             )}
 
             <button
@@ -400,6 +449,71 @@ function ProductActionsModal({
                 disabled={loading}
               >
                 {loading ? 'Saving...' : 'Mark as sold'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {mode === 'ship' && (
+          <form
+            className="product-form"
+            onSubmit={handleShipSubmit}
+          >
+            <div className="form-group">
+              <label htmlFor="shipping-courier">
+                Courier
+              </label>
+
+              <input
+                id="shipping-courier"
+                type="text"
+                value={courier}
+                onChange={(event) =>
+                  setCourier(event.target.value)
+                }
+                placeholder="e.g. J&T Express"
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="tracking-number">
+                Tracking number
+              </label>
+
+              <input
+                id="tracking-number"
+                type="text"
+                value={trackingNumber}
+                onChange={(event) =>
+                  setTrackingNumber(event.target.value)
+                }
+                placeholder="Enter tracking number"
+                disabled={loading}
+              />
+            </div>
+
+            {formError && (
+              <p className="form-error">{formError}</p>
+            )}
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setMode('menu')}
+                disabled={loading}
+              >
+                Back
+              </button>
+
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Mark as shipped'}
               </button>
             </div>
           </form>
