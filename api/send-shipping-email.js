@@ -1,9 +1,11 @@
 import nodemailer from 'nodemailer'
 
+const smtpPort = Number(process.env.SMTP_PORT)
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: Number(process.env.SMTP_PORT) === 465,
+  port: smtpPort,
+  secure: smtpPort === 465,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -29,11 +31,40 @@ function escapeHtml(value = '') {
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({
-      error: 'Method not allowed',
+      success: false,
+      error: 'Method not allowed.',
     })
   }
 
   try {
+    /*
+     * Check that the SMTP environment variables
+     * actually exist on Vercel.
+     */
+
+    const missingEnv = [
+      'SMTP_HOST',
+      'SMTP_PORT',
+      'SMTP_USER',
+      'SMTP_PASS',
+      'SMTP_FROM',
+    ].filter(
+      (key) => !process.env[key]
+    )
+
+    if (missingEnv.length > 0) {
+      console.error(
+        'Missing SMTP environment variables:',
+        missingEnv
+      )
+
+      return res.status(500).json({
+        success: false,
+        error:
+          'Email service is not configured correctly.',
+      })
+    }
+
     const {
       customerEmail,
       customerName,
@@ -42,7 +73,11 @@ export default async function handler(req, res) {
       total,
       courier,
       expiresAt,
-    } = req.body
+    } = req.body || {}
+
+    /*
+     * Validate order data.
+     */
 
     if (
       !customerEmail ||
@@ -53,22 +88,66 @@ export default async function handler(req, res) {
       total === undefined ||
       !expiresAt
     ) {
+      console.error(
+        'Missing order email data:',
+        {
+          customerEmail: !!customerEmail,
+          customerName: !!customerName,
+          receiptNumber: !!receiptNumber,
+          itemCount: items.length,
+          total,
+          expiresAt: !!expiresAt,
+        }
+      )
+
       return res.status(400).json({
-        error: 'Missing required order information.',
+        success: false,
+        error:
+          'Missing required order information.',
       })
     }
 
-    const paymentDeadline = new Date(expiresAt)
+    /*
+     * Verify SMTP connection before attempting
+     * to send the email.
+     */
 
-    const formattedDeadline = paymentDeadline.toLocaleString('en-PH', {
-      timeZone: 'Asia/Manila',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
+    try {
+      await transporter.verify()
+
+      console.log(
+        'SMTP connection verified successfully.'
+      )
+    } catch (smtpError) {
+      console.error(
+        'SMTP verification failed:',
+        smtpError
+      )
+
+      return res.status(500).json({
+        success: false,
+        error:
+          'Unable to connect to the email server.',
+      })
+    }
+
+    const paymentDeadline = new Date(
+      expiresAt
+    )
+
+    const formattedDeadline =
+      paymentDeadline.toLocaleString(
+        'en-PH',
+        {
+          timeZone: 'Asia/Manila',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        }
+      )
 
     const itemRows = items
       .map(
@@ -103,7 +182,10 @@ export default async function handler(req, res) {
       <html>
         <head>
           <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+          />
           <title>Your Milkmoth Order</title>
         </head>
 
@@ -176,8 +258,10 @@ export default async function handler(req, res) {
                   font-size: 14px;
                   line-height: 1.7;
                 ">
-                  Hi ${escapeHtml(customerName)}, we've received your claim.
-                  The pieces below are currently being held for you.
+                  Hi ${escapeHtml(customerName)},
+                  we've received your claim.
+                  The pieces below are currently
+                  being held for you.
                 </p>
 
                 <!-- Receipt -->
@@ -272,7 +356,8 @@ export default async function handler(req, res) {
                     line-height: 1.7;
                     color: #756d66;
                   ">
-                    Please complete your payment before
+                    Please complete your payment
+                    before
                     <strong style="color: #302b27;">
                       ${formattedDeadline}
                     </strong>
@@ -281,7 +366,7 @@ export default async function handler(req, res) {
 
                 </div>
 
-                <!-- Payment Methods -->
+                <!-- Payment -->
 
                 <div style="
                   margin-top: 32px;
@@ -420,8 +505,9 @@ export default async function handler(req, res) {
                     line-height: 1.8;
                     color: #756d66;
                   ">
-                    Please send your proof of payment through our Instagram
-                    DM and include your order number
+                    Please send your proof of payment
+                    through our Instagram DM and
+                    include your order number
                     <strong style="color: #302b27;">
                       ${escapeHtml(receiptNumber)}
                     </strong>
@@ -443,14 +529,18 @@ export default async function handler(req, res) {
                     Delivery
                   </strong><br />
 
-                  Courier: ${escapeHtml(
-                    courier === 'j&t' ? 'J&T Express' : 'Lalamove'
+                  Courier:
+                  ${escapeHtml(
+                    courier === 'j&t'
+                      ? 'J&T Express'
+                      : 'Lalamove'
                   )}
 
                   <br /><br />
 
-                  Your order will be prepared for shipping once payment
-                  has been confirmed.
+                  Your order will be prepared
+                  for shipping once payment has
+                  been confirmed.
 
                 </div>
 
@@ -468,7 +558,8 @@ export default async function handler(req, res) {
                     font-size: 18px;
                     margin-bottom: 6px;
                   ">
-                    thank you for finding a little relic with us.
+                    thank you for finding a little
+                    relic with us.
                   </div>
 
                   <div style="
@@ -491,22 +582,50 @@ export default async function handler(req, res) {
       </html>
     `
 
-    await transporter.sendMail({
+    console.log(
+      'Attempting to send order confirmation:',
+      {
+        to: customerEmail,
+        receiptNumber,
+        itemCount: items.length,
+        total,
+        from: process.env.SMTP_FROM,
+      }
+    )
+
+    const info = await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to: customerEmail,
       subject: `Your Milkmoth order is reserved — ${receiptNumber}`,
       html,
     })
 
+    console.log(
+      'Order confirmation email sent successfully:',
+      {
+        messageId: info.messageId,
+        accepted: info.accepted,
+        rejected: info.rejected,
+      }
+    )
+
     return res.status(200).json({
       success: true,
-      message: 'Order confirmation email sent.',
+      message:
+        'Order confirmation email sent.',
+      messageId: info.messageId,
     })
   } catch (error) {
-    console.error('Order confirmation email error:', error)
+    console.error(
+      'Order confirmation email error:',
+      error
+    )
 
     return res.status(500).json({
-      error: 'Failed to send order confirmation email.',
+      success: false,
+      error:
+        error?.message ||
+        'Failed to send order confirmation email.',
     })
   }
 }
