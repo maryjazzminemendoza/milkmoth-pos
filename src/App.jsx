@@ -96,6 +96,11 @@ function App() {
       <Routes>
         {/* Public customer order form */}
         <Route
+          path="/order"
+          element={<OrderForm />}
+        />
+
+        <Route
           path="/order/:productId"
           element={<OrderForm />}
         />
