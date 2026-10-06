@@ -597,7 +597,7 @@ function OrderForm() {
                 </option>
 
                 <option value="facebook">
-                  TikTok
+                  Facebook
                 </option>
 
                 <option value="other">
