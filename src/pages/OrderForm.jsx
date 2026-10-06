@@ -136,6 +136,11 @@ function OrderForm() {
     setError('')
 
     try {
+      /*
+       * STEP 1
+       * Submit the claim and create the order.
+       */
+
       const { data, error } =
         await supabase.rpc(
           'submit_claim',
@@ -163,6 +168,68 @@ function OrderForm() {
           'We could not submit your claim.'
         )
       }
+
+      /*
+       * STEP 2
+       * Send the order confirmation email.
+       *
+       * If the email fails, we do NOT undo
+       * the order. The order has already been
+       * successfully created in Supabase.
+       */
+
+      try {
+        const emailResponse = await fetch(
+          '/api/send-order-confirmation-email',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              customerEmail:
+                form.customer_email,
+
+              customerName:
+                form.customer_name,
+
+              receiptNumber:
+                data.receipt_number,
+
+              items: claim.items,
+
+              total: data.total,
+
+              courier: data.courier,
+
+              expiresAt:
+                data.expires_at,
+            }),
+          }
+        )
+
+        if (!emailResponse.ok) {
+          const emailError =
+            await emailResponse
+              .json()
+              .catch(() => null)
+
+          console.error(
+            'Order confirmation email failed:',
+            emailError
+          )
+        }
+      } catch (emailError) {
+        console.error(
+          'Order confirmation email request failed:',
+          emailError
+        )
+      }
+
+      /*
+       * STEP 3
+       * Show the successful order page.
+       */
 
       setSubmittedOrder(data)
     } catch (error) {
@@ -214,7 +281,9 @@ function OrderForm() {
               Thank you,{' '}
               {form.customer_name}.
               Your Milkmoth claim has been
-              received.
+              received, and we've sent your
+              payment instructions to{' '}
+              {form.customer_email}.
             </p>
 
             <div className="order-summary">
@@ -267,13 +336,20 @@ function OrderForm() {
                 payment within this period
                 to secure your order.
               </p>
+
+              <p>
+                Check your email for the
+                GCash and GoTyme payment
+                details and QR codes.
+              </p>
             </div>
 
             <p className="order-footer-note">
-              Milkmoth will contact you
-              using the details you provided
-              for payment and order
-              confirmation.
+              After payment, please send
+              your proof of payment through
+              Instagram DM and include your
+              receipt number so we can
+              confirm your order.
             </p>
           </div>
         </div>
@@ -418,6 +494,12 @@ function OrderForm() {
                 placeholder="you@email.com"
                 required
               />
+
+              <small>
+                We'll send your order
+                confirmation and payment
+                details here.
+              </small>
             </div>
 
             <div className="form-field">
