@@ -600,7 +600,11 @@ function OrderForm() {
                   Facebook
                 </option>
 
-                <option value="other">
+                <option value="Carousel">
+                  Carousel
+                </option>
+
+                <option value="Other">
                   Other
                 </option>
               </select>
