@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard'
 import Products from './pages/Products'
 import Sales from './pages/Sales'
 import Settings from './pages/Settings'
+import OrderForm from './pages/OrderForm'
 
 import Layout from './components/Layout'
 
@@ -92,13 +93,31 @@ function App() {
 
   return (
     <BrowserRouter>
-      {!session ? (
-        <Routes>
-          <Route path="*" element={<Login />} />
-        </Routes>
-      ) : (
-        <ProtectedRoutes session={session} />
-      )}
+      <Routes>
+        {/* Public customer order form */}
+        <Route
+          path="/order/:productId"
+          element={<OrderForm />}
+        />
+
+        {/* Login */}
+        {!session && (
+          <Route
+            path="*"
+            element={<Login />}
+          />
+        )}
+
+        {/* Authenticated POS */}
+        {session && (
+          <Route
+            path="*"
+            element={
+              <ProtectedRoutes session={session} />
+            }
+          />
+        )}
+      </Routes>
     </BrowserRouter>
   )
 }
