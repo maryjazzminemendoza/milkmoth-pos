@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
   Shirt,
+  ClipboardList,
   Receipt,
   Settings,
   LogOut,
@@ -24,6 +25,11 @@ function Sidebar({ mobileOpen, closeMobile }) {
       name: 'Products',
       path: '/products',
       icon: Shirt,
+    },
+    {
+      name: 'Orders',
+      path: '/orders',
+      icon: ClipboardList,
     },
     {
       name: 'Sales',
@@ -77,11 +83,17 @@ function Sidebar({ mobileOpen, closeMobile }) {
                 onClick={closeMobile}
                 className={({ isActive }) =>
                   `nav-item ${
-                    isActive ? 'nav-item-active' : ''
+                    isActive
+                      ? 'nav-item-active'
+                      : ''
                   }`
                 }
               >
-                <Icon size={19} strokeWidth={1.8} />
+                <Icon
+                  size={19}
+                  strokeWidth={1.8}
+                />
+
                 <span>{item.name}</span>
               </NavLink>
             )
@@ -92,7 +104,11 @@ function Sidebar({ mobileOpen, closeMobile }) {
           className="logout-button"
           onClick={handleLogout}
         >
-          <LogOut size={19} strokeWidth={1.8} />
+          <LogOut
+            size={19}
+            strokeWidth={1.8}
+          />
+
           <span>Sign out</span>
         </button>
       </aside>

@@ -11,6 +11,7 @@ import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Products from './pages/Products'
+import Orders from './pages/Orders'
 import Sales from './pages/Sales'
 import Settings from './pages/Settings'
 import OrderForm from './pages/OrderForm'
@@ -36,6 +37,11 @@ function ProtectedRoutes({ session }) {
         />
 
         <Route
+          path="/orders"
+          element={<Orders />}
+        />
+
+        <Route
           path="/sales"
           element={<Sales />}
         />
@@ -47,7 +53,12 @@ function ProtectedRoutes({ session }) {
 
         <Route
           path="*"
-          element={<Navigate to="/dashboard" replace />}
+          element={
+            <Navigate
+              to="/dashboard"
+              replace
+            />
+          }
         />
       </Routes>
     </Layout>
@@ -118,7 +129,9 @@ function App() {
           <Route
             path="*"
             element={
-              <ProtectedRoutes session={session} />
+              <ProtectedRoutes
+                session={session}
+              />
             }
           />
         )}
