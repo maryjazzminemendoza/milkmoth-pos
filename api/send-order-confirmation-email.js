@@ -419,7 +419,7 @@ export default async function handler(req, res) {
                       text-align: center;
                     ">
                       <img
-                        src="https://YOUR-DOMAIN.com/payment/gcash-qr.jpg"
+                        src="https://milkmoth-pos.vercel.com/payment/gcash-qr.jpg"
                         alt="GCash QR code"
                         style="
                           width: 180px;
@@ -468,7 +468,7 @@ export default async function handler(req, res) {
                       text-align: center;
                     ">
                       <img
-                        src="https://YOUR-DOMAIN.com/payment/gotyme-qr.jpg"
+                        src="https://milkmoth-pos.vercel.com/payment/gotyme-qr.jpg"
                         alt="GoTyme QR code"
                         style="
                           width: 180px;
