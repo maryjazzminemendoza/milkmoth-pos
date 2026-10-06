@@ -289,11 +289,11 @@ function Orders() {
     const form =
       shippingForms[order.id] || {}
 
-    const courier = form.courier
+    const courier = order.courier
 
     if (!courier) {
       setActionError(
-        'Please select a courier.'
+        'This order does not have a courier selected.'
       )
       return
     }
@@ -318,14 +318,15 @@ function Orders() {
       return
     }
 
+    const trackingValue =
+      courier === 'j&t'
+        ? form.trackingNumber.trim()
+        : form.trackingUrl.trim()
+
     const confirmed = window.confirm(
       `Mark ${order.receipt_number || 'this order'} as shipped?\n\n` +
         `${formatCourier(courier)}\n` +
-        `${
-          courier === 'j&t'
-            ? form.trackingNumber
-            : form.trackingUrl
-        }\n\n` +
+        `${trackingValue}\n\n` +
         `A shipping email will be sent to ${order.customer_email}.`
     )
 
@@ -336,14 +337,14 @@ function Orders() {
 
     try {
       /*
-       * First mark the order as shipped.
+       * The courier is already stored on the order.
+       * Only tracking information is supplied here.
        */
       const { data, error } =
         await supabase.rpc(
           'ship_order',
           {
             p_order_id: order.id,
-            p_courier: courier,
             p_tracking_number:
               courier === 'j&t'
                 ? form.trackingNumber.trim()
@@ -382,7 +383,7 @@ function Orders() {
               order.customer_name,
             receiptNumber:
               order.receipt_number,
-            courier,
+            courier: order.courier,
             trackingNumber:
               courier === 'j&t'
                 ? form.trackingNumber.trim()
@@ -539,6 +540,17 @@ function Orders() {
 
               <span>
                 {formatSource(order.source)}
+              </span>
+            </div>
+
+            <div className="order-detail-row">
+              <Truck
+                size={14}
+                strokeWidth={1.6}
+              />
+
+              <span>
+                {formatCourier(order.courier)}
               </span>
             </div>
           </div>
@@ -750,6 +762,8 @@ function Orders() {
     const itemCount =
       order.order_items?.length || 0
 
+    const courier = order.courier
+
     return (
       <div
         className={`order-card ${
@@ -832,44 +846,33 @@ function Orders() {
                   </p>
 
                   <span>
-                    Choose the courier and add
-                    the tracking details.
+                    The customer selected{' '}
+                    <strong>
+                      {formatCourier(courier)}
+                    </strong>
+                    . Add the tracking details
+                    below.
                   </span>
                 </div>
               </div>
 
               <div className="shipping-form-grid">
-                <label className="form-field">
+                <div className="form-field">
                   <span>Courier</span>
 
-                  <select
-                    value={
-                      form.courier || ''
-                    }
-                    onChange={(event) =>
-                      updateShippingForm(
-                        order.id,
-                        'courier',
-                        event.target.value
-                      )
-                    }
-                    disabled={shipping}
-                  >
-                    <option value="">
-                      Select courier
-                    </option>
+                  <div className="shipping-courier-display">
+                    <Truck
+                      size={15}
+                      strokeWidth={1.6}
+                    />
 
-                    <option value="j&t">
-                      J&T Express
-                    </option>
+                    <strong>
+                      {formatCourier(courier)}
+                    </strong>
+                  </div>
+                </div>
 
-                    <option value="lalamove">
-                      Lalamove
-                    </option>
-                  </select>
-                </label>
-
-                {form.courier === 'j&t' && (
+                {courier === 'j&t' && (
                   <label className="form-field">
                     <span>
                       Tracking number
@@ -894,8 +897,7 @@ function Orders() {
                   </label>
                 )}
 
-                {form.courier ===
-                  'lalamove' && (
+                {courier === 'lalamove' && (
                   <label className="form-field">
                     <span>
                       Tracking link
@@ -1023,6 +1025,7 @@ function Orders() {
             <div className="shipping-summary">
               <div>
                 <span>Courier</span>
+
                 <strong>
                   {formatCourier(
                     order.courier
@@ -1090,13 +1093,6 @@ function Orders() {
       (total, order) =>
         total +
         (order.order_items?.length || 0),
-      0
-    )
-
-  const pendingValue =
-    pendingOrders.reduce(
-      (total, order) =>
-        total + getOrderTotal(order),
       0
     )
 

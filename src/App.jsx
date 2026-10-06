@@ -11,10 +11,10 @@ import { supabase } from './lib/supabase'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Products from './pages/Products'
-import Orders from './pages/Orders'
 import Sales from './pages/Sales'
 import Settings from './pages/Settings'
 import OrderForm from './pages/OrderForm'
+import Orders from './pages/Orders'
 
 import Layout from './components/Layout'
 
@@ -37,11 +37,6 @@ function ProtectedRoutes({ session }) {
         />
 
         <Route
-          path="/orders"
-          element={<Orders />}
-        />
-
-        <Route
           path="/sales"
           element={<Sales />}
         />
@@ -49,6 +44,11 @@ function ProtectedRoutes({ session }) {
         <Route
           path="/settings"
           element={<Settings />}
+        />
+
+        <Route
+          path="/orders"
+          element={<Orders />}
         />
 
         <Route
@@ -105,18 +105,17 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public customer order form */}
+        {/*
+         * Public customer claim page.
+         *
+         * This must come before the protected
+         * dashboard routes.
+         */}
         <Route
-          path="/order"
+          path="/order/:claimToken"
           element={<OrderForm />}
         />
 
-        <Route
-          path="/order/:productId"
-          element={<OrderForm />}
-        />
-
-        {/* Login */}
         {!session && (
           <Route
             path="*"
@@ -124,7 +123,6 @@ function App() {
           />
         )}
 
-        {/* Authenticated POS */}
         {session && (
           <Route
             path="*"
