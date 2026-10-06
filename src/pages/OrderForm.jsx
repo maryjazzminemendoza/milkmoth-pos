@@ -347,7 +347,7 @@ function OrderForm() {
             <p className="order-footer-note">
               After payment, please send
               your proof of payment through
-              Instagram DM and include your
+              Instagram DM @milkmoth.ph and include your
               receipt number so we can
               confirm your order.
             </p>
@@ -593,6 +593,10 @@ function OrderForm() {
                 </option>
 
                 <option value="tiktok">
+                  TikTok
+                </option>
+
+                <option value="facebook">
                   TikTok
                 </option>
 
